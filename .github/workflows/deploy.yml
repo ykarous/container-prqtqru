@@ -1,12 +1,13 @@
 name: Deploy
-# ensure that only a single job or workflow using the same concurrency group will run at a time
-# See https://docs.github.com/en/actions/using-jobs/using-concurrency
+# S'assure qu'un seul déploiement tourne à la fois
 concurrency: deploy
+
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+
 jobs:
   Deploy:
     environment: production
@@ -18,18 +19,45 @@ jobs:
       APP_NAME: container-prqtqru
       SSH_CONFIG_FILE: /dev/null
       AMBER_SECRET: ${{ secrets.AMBER_SECRET }}
-      DOKKU_SSH_PRIVATE_KEY: ${{ secrets.DOKKU_SSH_PRIVATE_KEY}}
+      DOKKU_SSH_PRIVATE_KEY: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server."
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: 🚀 Initialisation
+        run: |
+          echo "🎉 Job déclenché par : ${{ github.event_name }}"
+          echo "🐧 OS du Runner : ${{ runner.os }}"
+
       - name: Check out repository code
         uses: actions/checkout@v3
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+
+      - name: 🔍 DIAGNOSTIC MATÉRIEL (Builder GitHub)
+        run: |
+          echo "--- INFO PROCESSEUR ---"
+          lscpu | grep "Model name"
+          echo "--- INFO MÉMOIRE ---"
+          free -h
+          echo "--- INFO RÉSEAU (Sortie GitHub) ---"
+          curl -s https://ipinfo.io/json | jq -r '.org, .city, .country'
+
+      - name: 🕵️ ANALYSE DE LA DESTINATION (Dokku Server)
+        run: |
+          echo "Recherche de l'adresse du serveur de production..."
+          # On cherche l'IP ou le domaine dans le script de déploiement
+          TARGET=$(grep -oE '[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+' ./.container-hosting/deploy.sh | cut -d'@' -f2 | head -n 1)
+          if [ -z "$TARGET" ]; then
+            echo "⚠️ Adresse IP masquée ou non trouvée directement."
+          else
+            echo "📍 Serveur cible détecté : $TARGET"
+            echo "--- LOCALISATION DU SERVEUR DE PROD ---"
+            curl -s https://ipinfo.io/$TARGET/json | jq -r '.org, .city, .region, .country'
+          fi
+
       - name: List files in the repository
         run: |
           ls -la ${{ github.workspace }}
-      - name: Deploy
+
+      - name: 🚢 Deploy
         run: |
           set -x
+          chmod +x ./.container-hosting/deploy.sh
           ./.container-hosting/deploy.sh
