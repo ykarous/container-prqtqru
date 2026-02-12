@@ -1,3 +1,15 @@
+# v0.0.5 (Thu Feb 12 2026)
+
+#### ⚠️ Pushed to `main`
+
+- Refactor server monitoring to include disk speed info ([@ykarous](https://github.com/ykarous))
+
+#### Authors: 1
+
+- [@ykarous](https://github.com/ykarous)
+
+---
+
 # v0.0.4 (Thu Feb 12 2026)
 
 #### ⚠️ Pushed to `main`
